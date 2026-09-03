@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from '../pages/LoginPage'
-import RegisterPage from '../pages/RegisterPage'
-import TasksPage from '../pages/TasksPage'
+import Login from '../pages/Login'
+import Register from '../pages/Register'
+import Dashboard from '../pages/Dashboard'
 import PrivateRoute from './PrivateRoute'
 import PublicRoute from './PublicRoute'
 
@@ -13,31 +13,30 @@ export default function AppRouter() {
             <Route
                 path="/login"
                 element={
-                <PublicRoute>
-                    <LoginPage />
-                </PublicRoute>
+                    <PublicRoute>
+                        <Login />
+                    </PublicRoute>
                 }
             />
 
             <Route
                 path="/register"
                 element={
-                <PublicRoute>
-                    <RegisterPage />
-                </PublicRoute>
+                    <PublicRoute>
+                        <Register />
+                    </PublicRoute>
                 }
             />
 
             <Route
-                path="/tasks"
+                path="/dashboard"
                 element={
-                <PrivateRoute>
-                    <TasksPage />
-                </PrivateRoute>
+                    <PrivateRoute>
+                        <Dashboard />
+                    </PrivateRoute>
                 }
             />
 
-            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     )

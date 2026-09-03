@@ -5,7 +5,29 @@ import routers from "./routes/index.js";
 
 const app = express();
 
-app.use(cors({origin: '*'}));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'https://minitaskback-one.vercel.app',
+  'https://minitask-manager-fsv.vercel.app',
+  env.FRONTEND_URL
+];
+
+const isAllowedOrigin = (origin) =>
+  !origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => res.json({status: "API funcionando ✅"}));

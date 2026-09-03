@@ -17,7 +17,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   }
 
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
+    <article className="bg-white/90 rounded-2xl shadow-[0_6px_20px_rgba(244,114,182,0.10)] border border-pink-100 p-4 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <button
@@ -26,8 +26,8 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
             aria-label={task.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
             className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-colors ${
               task.completed
-                ? 'bg-green-500 border-green-500'
-                : 'border-gray-300 hover:border-blue-400'
+                ? 'bg-rose-500 border-rose-500'
+                : 'border-pink-200 hover:border-rose-400'
             }`}
           />
           <div className="min-w-0">
@@ -47,7 +47,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
         <div className="flex gap-1 flex-shrink-0">
           <button
             onClick={() => onEdit(task)}
-            className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            className="text-xs text-rose-600 hover:text-rose-800 px-2 py-1 rounded hover:bg-rose-50 transition-colors"
           >
             Editar
           </button>

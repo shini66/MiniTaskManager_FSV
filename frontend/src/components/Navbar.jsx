@@ -8,15 +8,15 @@ export default function Navbar() {
   const linkClass = (path) =>
     `text-sm font-medium transition-colors ${
       pathname === path
-        ? 'text-indigo-600'
-        : 'text-gray-500 hover:text-indigo-600'
+        ? 'text-rose-600'
+        : 'text-gray-500 hover:text-rose-600'
     }`
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white/80 backdrop-blur border-b border-pink-100 shadow-sm">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <h1 className="text-xl font-bold text-indigo-600">MiniTaskManager</h1>
+          <h1 className="text-xl font-bold text-rose-600">MiniTaskManager</h1>
           <Link to="/dashboard" className={linkClass('/dashboard')}>
             Tareas
           </Link>

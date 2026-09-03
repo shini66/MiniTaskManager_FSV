@@ -39,8 +39,8 @@ export default function TaskForm({ task, onClose, onSave }) {
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-        <h2 id="modal-title" className="text-lg font-bold text-gray-800 mb-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_10px_40px_rgba(244,114,182,0.18)] border border-pink-100 p-6">
+        <h2 id="modal-title" className="text-lg font-bold text-rose-600 mb-4">
           {task ? 'Editar tarea' : 'Nueva tarea'}
         </h2>
 
@@ -57,7 +57,7 @@ export default function TaskForm({ task, onClose, onSave }) {
               onChange={handleChange}
               required
               autoFocus
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 bg-pink-50/70"
               placeholder="Nombre de la tarea"
             />
           </div>
@@ -83,14 +83,14 @@ export default function TaskForm({ task, onClose, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-pink-200 rounded-lg hover:bg-pink-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg font-medium transition-colors"
+              className="px-4 py-2 text-sm text-white bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 rounded-lg font-medium transition-colors"
             >
               {loading ? 'Guardando...' : 'Guardar'}
             </button>

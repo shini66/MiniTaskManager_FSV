@@ -20,7 +20,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(form)
-      navigate('/tasks')
+      navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Error al registrarse')
     } finally {
@@ -29,9 +29,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Crear cuenta</h1>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-fuchsia-100 px-4">
+      <div className="w-full max-w-sm bg-white/90 backdrop-blur rounded-3xl shadow-[0_10px_40px_rgba(244,114,182,0.15)] border border-pink-100 p-8">
+        <h1 className="text-2xl font-bold text-rose-600 mb-6 text-center">Crear cuenta</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
@@ -87,7 +87,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 rounded-lg transition-colors"
+            className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white font-medium py-2 rounded-lg transition-colors shadow-sm"
           >
             {loading ? 'Registrando...' : 'Registrarse'}
           </button>
@@ -95,7 +95,7 @@ export default function RegisterPage() {
 
         <p className="text-sm text-center text-gray-500 mt-6">
           ¿Ya tenés cuenta?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline font-medium">
+          <Link to="/login" className="text-rose-600 hover:text-rose-700 hover:underline font-medium">
             Iniciá sesión
           </Link>
         </p>

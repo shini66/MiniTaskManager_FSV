@@ -24,73 +24,121 @@ API RESTful para gestion de tareas con autenticacion JWT. Construida con Express
 Capas separadas con responsabilidades definidas:
 
 ```
-server.js                        → Entry point, levanta el servidor
+server.js                        → Entry point local: conecta a Mongo y hace listen en env.HOST:env.PORT
 src/
-  app.js                         → Configura Express (cors, json, rutas, errores)
+  app.js                         → Configura Express: cors({ origin: '*' }), express.json(),
+                                   GET / health, montaje de /api, handler 404 y handler 500
   config/
-    env.js                       → Variables de entorno
-    db.js                        → Conexion a MongoDB
+    env.js                       → Variables de entorno, cargadas desde ../../../.env (el .env de la raiz).
+                                   Defaults: PORT=3050, HOST='127.0.0.1',
+                                   MONGODB_URI='mongodb://localhost:27017',
+                                   JWT_SECRET='some_secret_key', JWT_EXPIRES_IN='24h'
+    db.js                        → connectDB(): mongoose.connect(env.MONGODB_URI) tal cual.
+                                   Logea exito/error y hace process.exit(1) si falla
   routes/
-    index.js                     → Agregador de rutas
-    auth.routes.js               → Rutas de autenticacion
-    task.routes.js               → Rutas de tareas
+    index.js                     → Agregador: /auth + /tasks bajo el prefijo /api
+    auth.routes.js               → POST /register, POST /login (publicas);
+                                   POST /logout, GET /me (con JWT)
+    task.routes.js               → POST /create, GET /me, PUT /update/:id,
+                                   PATCH /toggle/:id, DELETE /delete/:id (todas con JWT)
   controllers/
-    auth.controller.js           → Handlers HTTP de auth (validan request, responden)
-    task.controller.js           → Handlers HTTP de tareas
+    auth.controller.js           → register (201/400), login (200/401),
+                                   getMe (200/400, devuelve req.user), logout (200, stateless)
+    task.controller.js           → create (201/400), getTasks (200/400, parsea page/limit con
+                                   parseInt(...) || fallback, order con || 1),
+                                   update/delete/toggle con handleTaskError (404 si el mensaje
+                                   incluye 'not found', 400 en otro caso)
   services/
-    auth.service.js              → Logica de negocio: registro, login
-    task.service.js              → Logica de negocio: CRUD, filtros, paginacion
+    auth.service.js              → registerUser: rechaza si user o email existen;
+                                   crea usuario, genera token y resuelve
+                                   { user: { id, user, email }, token }.
+                                   loginUser: busca por user, compara con comparePassword,
+                                   rechaza con 'Invalid credentials' si falla
+    task.service.js              → createTask, getTasksByUser (filtros search/status,
+                                   paginacion page/limit, sort por createdAt segun order),
+                                   updateTask (findOneAndUpdate por {_id, user}),
+                                   deleteTask (findOneAndDelete por {_id, user}),
+                                   toggleTask (invierte completed y guarda).
+                                   Todos rechazan con 'Task not found or not authorized'
+                                   si no hay coincidencia de id + usuario
   models/
-    User.js                      → Schema de usuario con hash de password
-    Task.js                      → Schema de tarea
+    User.js                      → Schema { user (requerido, unico), email (requerido, unico),
+                                   password (requerido) } + timestamps.
+                                   pre('save'): hash bcrypt genSalt(10) solo si password modificado
+    Task.js                      → Schema { title (requerido), description (opcional),
+                                   completed (default false), user (ObjectId -> User, requerido) }
+                                   + timestamps
   middlewares/
-    auth.middleware.js           → Protege rutas con JWT
+    auth.middleware.js           → protect: exige Authorization: Bearer <token>.
+                                   Sin header o mal formato → 401 { message: "Not authorization" }.
+                                   Token invalido / usuario inexistente → 401
+                                   { message: "Not authorized" [, error] }.
+                                   Exito: req.user = doc User sin password y next()
   utils/
-    generateToken.js             → Genera tokens JWT
+    generateToken.js             → jwt.sign({ id: user._id, user: user.user },
+                                   env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN }).
+                                   Lanza Error("Error generating token") si falla
 api/
-  index.js                       → Entry point para Vercel (serverless)
+  index.js                       → Entry point serverless (Vercel): handler con flag
+                                   isConnected (conexion lazy, una sola vez) que delega en app
 ```
 
-**Flujo tipico:** `Route → Controller → Service → Model (Mongoose)`
+**Flujo tipico:** `Route → auth.middleware (si aplica) → Controller → Service → Model (Mongoose)`
 
 ---
 
 ## Endpoints
 
+Base local por defecto: `http://127.0.0.1:3050` (ver Variables de Entorno; el `.env` actual usa `HOST=localhost`).
+
 ### Salud
 
-| Metodo | Ruta | Auth | Descripcion |
-|--------|------|------|-------------|
-| GET | `/` | No | Health check |
+| Metodo | Ruta | Auth | Respuesta |
+|--------|------|------|-----------|
+| GET | `/` | No | `200 { status: "API funcionando ✅" }` |
 
 ### Autenticacion (`/api/auth`)
 
-| Metodo | Ruta | Auth | Descripcion |
-|--------|------|------|-------------|
-| POST | `/register` | No | Registrar usuario |
-| POST | `/login` | No | Iniciar sesion |
-| POST | `/logout` | JWT | Cerrar sesion |
-| GET | `/me` | JWT | Obtener usuario actual |
+| Metodo | Ruta | Auth | Exito | Errores |
+|--------|------|------|-------|---------|
+| POST | `/register` | No | `201 { user: { id, user, email }, token }` | `400 { message }` (usuario/email duplicado o validacion) |
+| POST | `/login` | No | `200 { user: { id, user, email }, token }` | `401 { message: "Invalid credentials" }` |
+| POST | `/logout` | JWT | `200 { message: "Logged out successfully" }` (stateless, no invalida el token) | `401 { message }` (sin token o invalido) |
+| GET | `/me` | JWT | `200` documento User sin password (`_id, user, email, createdAt, updatedAt, __v`) | `401 { message }` / `400 { message }` |
 
-### Tareas (`/api/tasks`)
+Body esperados: `register { user, email, password }`, `login { user, password }`.
 
-| Metodo | Ruta | Auth | Descripcion |
-|--------|------|------|-------------|
-| POST | `/create` | JWT | Crear tarea |
-| GET | `/me` | JWT | Listar tareas del usuario |
-| PUT | `/update/:id` | JWT | Actualizar tarea |
-| PATCH | `/toggle/:id` | JWT | Cambiar estado completado |
-| DELETE | `/delete/:id` | JWT | Eliminar tarea |
+### Tareas (`/api/tasks`, todas con JWT)
+
+| Metodo | Ruta | Exito | Errores |
+|--------|------|-------|---------|
+| POST | `/create` | `201` Task (`_id, title, description, completed, user, createdAt, updatedAt, __v`) | `400 { message }`, `401` |
+| GET | `/me` | `200 { tasks, page, totalPages, totalTasks }` | `400 { message }` (`Invalid status filter`, etc.), `401` |
+| PUT | `/update/:id` | `200` Task actualizada (solo `title`/`description`) | `404` si no existe o no es del usuario, `400` otro error, `401` |
+| PATCH | `/toggle/:id` | `200` Task con `completed` invertido | `404` si no existe o no es del usuario, `400` otro error, `401` |
+| DELETE | `/delete/:id` | `200 { message: "Task deleted successfully" }` | `404` si no existe o no es del usuario, `400` otro error, `401` |
+
+Notas:
+
+- `update` solo acepta `title`/`description` (el controlador ignora el resto; `completed` solo cambia via `toggle`).
+- Todas las operaciones de tareas filtran por `{ _id: taskId, user: userId }`: un usuario nunca toca tareas ajenas.
+- Respuestas de error de tareas usan `handleTaskError`: `404` si el mensaje contiene `not found`, `400` en caso contrario.
 
 ### Parametros de consulta — `GET /api/tasks/me`
 
 | Parametro | Tipo | Default | Descripcion |
 |-----------|------|---------|-------------|
 | `search` | string | - | Busqueda por titulo o descripcion (regex, case-insensitive) |
-| `status` | `completed` / `pending` | - | Filtrar por estado |
-| `page` | integer | `1` | Numero de pagina |
-| `limit` | integer | `10` | Tareas por pagina |
-| `order` | `1` / `-1` | `1` | Orden ascendente (1) o descendente (-1) por `createdAt` |
+| `status` | `completed` / `pending` | - | Filtrar por estado. Otro valor → `400 { message: "Invalid status filter" }` |
+| `page` | integer | `1` | Numero de pagina (`parseInt(query.page) \|\| 1`) |
+| `limit` | integer | `10` | Tareas por pagina (`parseInt(query.limit) \|\| 10`) |
+| `order` | `1` / `-1` | `1` | Orden por `createdAt`. El controlador usa `req.query.order \|\| 1` y el servicio normaliza con `Number(order)` y ordena con `.sort({ createdAt: sortOrder })` |
+
+### Manejo global de errores (`src/app.js`)
+
+- Ruta no coincidente → `404 { message: "Endpoint not found" }`.
+- Excepcion no capturada → `500 { message: "Internal server error" }` (con `console.error`).
+- Auth: ver mensajes literales en la seccion de Arquitectura (`"Not authorization"` vs `"Not authorized"`).
 
 ---
 
@@ -115,7 +163,7 @@ Metodo de instancia: `comparePassword(candidate)` — compara password con hash.
 ```json
 {
   "title": "String (requerido)",
-  "description": "String",
+  "description": "String (opcional)",
   "completed": "Boolean (default: false)",
   "user": "ObjectId -> User (requerido)",
   "createdAt": "Date",
@@ -127,15 +175,25 @@ Metodo de instancia: `comparePassword(candidate)` — compara password con hash.
 
 ## Variables de Entorno
 
+`src/config/env.js` carga el `.env` de la **raiz del proyecto** (`path.resolve(__dirname, "../../../.env")`).
+
+| Variable | Default en codigo | Valor actual en `.env` raiz |
+|----------|-------------------|-----------------------------|
+| `PORT` | `3050` | `3050` |
+| `HOST` | `127.0.0.1` | `localhost` |
+| `MONGODB_URI` | `mongodb://localhost:27017` | `mongodb://localhost:27017/minitask` |
+| `JWT_SECRET` | `some_secret_key` | `some_secret_key` |
+| `JWT_EXPIRES_IN` | `24h` | `24h` |
+
+Ejemplo (`.env` en la raiz):
+
 ```
+HOST=localhost
 PORT=3050
-HOST=127.0.0.1
-MONGODB_URI=mongodb://localhost:27017/miBase
-JWT_SECRET=tu_secreto
+MONGODB_URI=mongodb://localhost:27017/minitask
+JWT_SECRET=some_secret_key
 JWT_EXPIRES_IN=24h
 ```
-
-Todas tienen valores por defecto (ver `src/config/env.js`).
 
 ---
 
@@ -145,20 +203,28 @@ Todas tienen valores por defecto (ver `src/config/env.js`).
 # Instalar dependencias
 npm install
 
-# Desarrollo (con nodemon)
+# Desarrollo (con nodemon, ejecuta server.js)
 npm run dev
 
 # Produccion
 npm start
 ```
 
+Scripts (`package.json`, `type: module`):
+
+- `npm start` → `node server.js`
+- `npm run dev` → `nodemon server.js`
+- `npm test` → placeholder (`echo "Error: no test specified" && exit 1`, falla a proposito)
+
+Requisitos: Node.js 20+, MongoDB 7+ (local o Atlas).
+
 ## Despliegue en Vercel
 
-El proyecto incluye `vercel.json` y `api/index.js` para despliegue serverless.
-Vercel ejecuta `server.js` como funcion serverless con conexion lazy a MongoDB.
+- Entry point serverless: `api/index.js` (no `server.js`). Usa conexion lazy a MongoDB con flag `isConnected` para reutilizar la conexion entre invocaciones.
+- No hay `vercel.json` en el repo actualmente; el despliegue usa la deteccion por defecto de Vercel para la funcion `api/index.js`.
 
 ---
 
 ## OpenAPI Spec
 
-La especificacion completa OpenAPI 3.1 esta en `openapi.yaml`. Puedes importarla en herramientas como Postman, Insomnia o Swagger UI.
+La especificacion completa OpenAPI 3.1 esta en `backend/openapi.yaml` (servidor `http://127.0.0.1:3050`). Puedes importarla en herramientas como Postman, Insomnia o Swagger UI. Incluye los schemas `RegisterRequest`, `LoginRequest`, `CreateTaskRequest`, `UpdateTaskRequest` (solo `title`/`description`), `AuthResponse`, `PublicUser`, `CurrentUser`, `Task`, `TaskListResponse` (`tasks, page, totalPages, totalTasks`), `MessageResponse` y `Error`, mas el parametro `order` (`1`/`-1`, default `1`) en `GET /api/tasks/me`.

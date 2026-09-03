@@ -101,7 +101,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-fuchsia-100">
       <Navbar />
 
       <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -112,11 +112,11 @@ export default function Dashboard() {
             placeholder="Buscar tareas..."
             value={search}
             onChange={handleSearchChange}
-            className="flex-1 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            className="flex-1 border border-pink-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white/80"/>
           <select
             value={status}
             onChange={handleStatusChange}
-            className="border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="border border-pink-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white/80">
             <option value="">Todas</option>
             <option value="pending">Pendientes</option>
             <option value="completed">Completadas</option>
@@ -126,7 +126,7 @@ export default function Dashboard() {
         {/* Botón nueva tarea */}
         <button
           onClick={openCreate}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm"
+          className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-medium py-3 rounded-xl transition-colors shadow-sm"
         >
           + Nueva tarea
         </button>
@@ -155,14 +155,14 @@ export default function Dashboard() {
             <div>
               <button
                   onClick={handleOrder}
-                  className="px-3 py-2 bg-gray-200 rounded disabled:opacity-50 transition-opacity"
+                  className="px-3 py-2 bg-rose-100 text-rose-700 rounded disabled:opacity-50 transition-opacity"
                 >
                   {order === 1 ? "⬆️" : "⬇️"}
                 </button>
               <select
                 value={limit}
                 onChange={handleLimitChange}
-                className="border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-pink-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white/80"
               >
                 <option value={2}>2 por página</option>
                 <option value={5}>5 por página</option>
@@ -179,7 +179,7 @@ export default function Dashboard() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 transition-opacity"
+                className="px-3 py-1 bg-rose-100 text-rose-700 rounded disabled:opacity-50 transition-opacity"
               >
                 {"<"}
               </button>
@@ -191,7 +191,7 @@ export default function Dashboard() {
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 transition-opacity"
+                className="px-3 py-1 bg-rose-100 text-rose-700 rounded disabled:opacity-50 transition-opacity"
               >
                 {">"}
               </button>
